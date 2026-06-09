@@ -29,9 +29,9 @@ button{font-family:inherit;font-size:16px;font-weight:700;padding:16px 10px;bord
 .boff{background:var(--red)}
 button:hover{filter:brightness(1.06)}
 button:active{transform:scale(.98)}
-button:disabled{opacity:.45;cursor:default}
+button:disabled{opacity:.5;cursor:default}
 .active{outline:3px solid #00000014;outline-offset:2px}
-.hint{margin-top:16px;font-size:13px;color:#999;min-height:18px}
+.hint{margin-top:16px;font-size:13px;color:#888;min-height:18px}
 .foot{margin-top:16px;font-size:11px;color:#bbb;line-height:1.5}
 </style>
 </head>
@@ -50,7 +50,7 @@ button:disabled{opacity:.45;cursor:default}
     <button class="boff" id="boff" onclick="setStatus('aus')">Fähre AUS</button>
   </div>
   <div class="hint" id="hint"></div>
-  <div class="foot">Die Änderung erscheint auf der Webseite innerhalb weniger Minuten.</div>
+  <div class="foot">Die Änderung erscheint auf der Webseite innerhalb 1–2 Minuten.</div>
 </div>
 <script>
 var SET_URL="https://hook.eu1.make.com/0b0bhb6ymknmhofjgajk449dxuhxd1tv";
@@ -70,18 +70,28 @@ function readStatus(){
     .then(function(j){try{return JSON.parse(atob((j.content||'').replace(/\s/g,''))).status;}catch(e){return null;}});
 }
 function setStatus(s){
+  var target=String(s).toLowerCase();
   render(s);
   bon.disabled=boff.disabled=true;
   hint.textContent='wird gespeichert …';
   fetch(SET_URL+'?status='+s,{mode:'no-cors'}).catch(function(){});
-  setTimeout(function(){
+  var tries=0;
+  var iv=setInterval(function(){
+    tries++;
     readStatus().then(function(cur){
-      if(cur)render(cur);
-      hint.textContent='✓ gespeichert';
-      bon.disabled=boff.disabled=false;
-      setTimeout(function(){hint.textContent='';},2500);
+      if(cur&&String(cur).toLowerCase()===target){
+        clearInterval(iv); render(cur);
+        hint.textContent='✓ gespeichert';
+        bon.disabled=boff.disabled=false;
+        setTimeout(function(){hint.textContent='';},4000);
+      }else if(tries>=9){
+        clearInterval(iv); render(s);
+        hint.textContent='✓ gespeichert – Übernahme dauert noch einen Moment';
+        bon.disabled=boff.disabled=false;
+        setTimeout(function(){hint.textContent='';},4000);
+      }
     });
-  },3500);
+  },5000);
 }
 readStatus().then(function(s){render(s||'aus');}).catch(function(){render('aus');});
 </script>
