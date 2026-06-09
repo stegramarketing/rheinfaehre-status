@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Fähren-Schalter · Rheinfähre Königswinter</title>
+<style>
+:root{--ink:#15151a;--purple:#6a72f9;--green:#1e9e57;--red:#c0392b}
+*{box-sizing:border-box}
+body{margin:0;font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f5f8;color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{width:100%;max-width:440px;background:#fff;border-radius:22px;box-shadow:0 20px 60px #0000001a;padding:26px 24px 24px;text-align:center}
+.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:18px}
+.brand img{height:40px;width:auto}
+.brand b{font-size:15px;font-weight:600;color:#555}
+.statusbox{border-radius:16px;padding:22px 16px;margin-bottom:22px;transition:background .3s}
+.statusbox.on{background:#e8f7ef}
+.statusbox.off{background:#fdecea}
+.dot{width:14px;height:14px;border-radius:50%;display:inline-block;margin-right:9px;vertical-align:middle}
+.on .dot{background:var(--green);box-shadow:0 0 0 5px #1e9e5722}
+.off .dot{background:var(--red);box-shadow:0 0 0 5px #c0392b22}
+.statuslabel{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#999;margin-bottom:8px}
+.statustext{font-size:23px;font-weight:700}
+.on .statustext{color:var(--green)}
+.off .statustext{color:var(--red)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{font-family:inherit;font-size:16px;font-weight:700;padding:16px 10px;border-radius:14px;border:0;cursor:pointer;color:#fff;transition:filter .15s,transform .05s,opacity .2s}
+.bon{background:var(--green)}
+.boff{background:var(--red)}
+button:hover{filter:brightness(1.06)}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.45;cursor:default}
+.active{outline:3px solid #00000014;outline-offset:2px}
+.hint{margin-top:16px;font-size:13px;color:#999;min-height:18px}
+.foot{margin-top:16px;font-size:11px;color:#bbb;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">
+    <img src="https://onecdn.io/media/00c18bac-b25b-4561-a23d-692c6c90904d/full" alt="Rheinfähre Königswinter">
+    <b>Fähren-Schalter</b>
+  </div>
+  <div class="statusbox off" id="box">
+    <div class="statuslabel">Aktueller Status</div>
+    <div class="statustext"><span class="dot"></span><span id="txt">lädt …</span></div>
+  </div>
+  <div class="btns">
+    <button class="bon" id="bon" onclick="setStatus('an')">Fähre EIN</button>
+    <button class="boff" id="boff" onclick="setStatus('aus')">Fähre AUS</button>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div class="foot">Die Änderung erscheint auf der Webseite innerhalb weniger Minuten.</div>
+</div>
+<script>
+var SET_URL="https://hook.eu1.make.com/0b0bhb6ymknmhofjgajk449dxuhxd1tv";
+var API_URL="https://api.github.com/repos/stegramarketing/rheinfaehre-status/contents/status.json";
+var box=document.getElementById('box'),txt=document.getElementById('txt'),hint=document.getElementById('hint'),bon=document.getElementById('bon'),boff=document.getElementById('boff');
+
+function render(s){
+  var on=String(s).toLowerCase()!=='aus';
+  box.className='statusbox '+(on?'on':'off');
+  txt.textContent=on?'Fähre in Betrieb':'Fähre nicht in Betrieb';
+  bon.classList.toggle('active',on);
+  boff.classList.toggle('active',!on);
+}
+function readStatus(){
+  return fetch(API_URL+'?t='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.json();})
+    .then(function(j){try{return JSON.parse(atob((j.content||'').replace(/\s/g,''))).status;}catch(e){return null;}});
+}
+function setStatus(s){
+  render(s);
+  bon.disabled=boff.disabled=true;
+  hint.textContent='wird gespeichert …';
+  fetch(SET_URL+'?status='+s,{mode:'no-cors'}).catch(function(){});
+  setTimeout(function(){
+    readStatus().then(function(cur){
+      if(cur)render(cur);
+      hint.textContent='✓ gespeichert';
+      bon.disabled=boff.disabled=false;
+      setTimeout(function(){hint.textContent='';},2500);
+    });
+  },3500);
+}
+readStatus().then(function(s){render(s||'aus');}).catch(function(){render('aus');});
+</script>
+</body>
+</html>
