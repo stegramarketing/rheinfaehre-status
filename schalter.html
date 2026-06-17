@@ -122,7 +122,6 @@ function unlock(){
 }
 function tryUnlock(){
   if(document.getElementById('pw').value===PW){
-    try{localStorage.setItem('ferryUnlocked','1');}catch(e){}
     unlock();
   } else {
     document.getElementById('lockerr').textContent='Falsches Passwort';
@@ -130,7 +129,6 @@ function tryUnlock(){
 }
 document.getElementById('unlockBtn').addEventListener('click',tryUnlock);
 document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') tryUnlock(); });
-try{ if(localStorage.getItem('ferryUnlocked')==='1') unlock(); }catch(e){}
 </script>
 </body>
 </html>
