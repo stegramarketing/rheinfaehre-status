@@ -13,6 +13,12 @@ body{margin:0;font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Robot
 .brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:18px}
 .brand img{height:40px;width:auto}
 .brand b{font-size:15px;font-weight:600;color:#555}
+.lockmsg{font-size:14px;color:#666;margin-bottom:14px}
+#pw{width:100%;font-family:inherit;font-size:16px;padding:14px 16px;border:1px solid #00000020;border-radius:12px;margin-bottom:12px;text-align:center}
+#pw:focus{outline:none;border-color:var(--purple)}
+.unlock{width:100%;font-family:inherit;font-size:16px;font-weight:700;padding:15px;border-radius:12px;border:0;background:var(--purple);color:#fff;cursor:pointer;transition:filter .15s}
+.unlock:hover{filter:brightness(1.06)}
+.lockerr{margin-top:12px;font-size:13px;color:var(--red);min-height:18px}
 .statusbox{border-radius:16px;padding:22px 16px;margin-bottom:22px;transition:background .3s}
 .statusbox.on{background:#e8f7ef}
 .statusbox.off{background:#fdecea}
@@ -24,19 +30,31 @@ body{margin:0;font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Robot
 .on .statustext{color:var(--green)}
 .off .statustext{color:var(--red)}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button{font-family:inherit;font-size:16px;font-weight:700;padding:16px 10px;border-radius:14px;border:0;cursor:pointer;color:#fff;transition:filter .15s,transform .05s,opacity .2s}
+button.tog{font-family:inherit;font-size:16px;font-weight:700;padding:16px 10px;border-radius:14px;border:0;cursor:pointer;color:#fff;transition:filter .15s,transform .05s,opacity .2s}
 .bon{background:var(--green)}
 .boff{background:var(--red)}
-button:hover{filter:brightness(1.06)}
-button:active{transform:scale(.98)}
-button:disabled{opacity:.5;cursor:default}
+button.tog:hover{filter:brightness(1.06)}
+button.tog:active{transform:scale(.98)}
+button.tog:disabled{opacity:.5;cursor:default}
 .active{outline:3px solid #00000014;outline-offset:2px}
 .hint{margin-top:16px;font-size:13px;color:#888;min-height:18px}
 .foot{margin-top:16px;font-size:11px;color:#bbb;line-height:1.5}
 </style>
 </head>
 <body>
-<div class="card">
+
+<div class="card" id="lock">
+  <div class="brand">
+    <img src="https://onecdn.io/media/00c18bac-b25b-4561-a23d-692c6c90904d/full" alt="Rheinfähre Königswinter">
+    <b>Fähren-Schalter</b>
+  </div>
+  <div class="lockmsg">Bitte Passwort eingeben</div>
+  <input id="pw" type="password" placeholder="Passwort" autocomplete="off" autocapitalize="off" autocorrect="off">
+  <button class="unlock" id="unlockBtn">Entsperren</button>
+  <div class="lockerr" id="lockerr"></div>
+</div>
+
+<div class="card" id="panel" style="display:none">
   <div class="brand">
     <img src="https://onecdn.io/media/00c18bac-b25b-4561-a23d-692c6c90904d/full" alt="Rheinfähre Königswinter">
     <b>Fähren-Schalter</b>
@@ -46,16 +64,18 @@ button:disabled{opacity:.5;cursor:default}
     <div class="statustext"><span class="dot"></span><span id="txt">lädt …</span></div>
   </div>
   <div class="btns">
-    <button class="bon" id="bon" onclick="setStatus('an')">Fähre EIN</button>
-    <button class="boff" id="boff" onclick="setStatus('aus')">Fähre AUS</button>
+    <button class="tog bon" id="bon" onclick="setStatus('an')">Fähre EIN</button>
+    <button class="tog boff" id="boff" onclick="setStatus('aus')">Fähre AUS</button>
   </div>
   <div class="hint" id="hint"></div>
   <div class="foot">Die Änderung erscheint auf der Webseite innerhalb 1–2 Minuten.</div>
 </div>
+
 <script>
+var PW="stegra";
 var SET_URL="https://hook.eu1.make.com/0b0bhb6ymknmhofjgajk449dxuhxd1tv";
 var API_URL="https://api.github.com/repos/stegramarketing/rheinfaehre-status/contents/status.json";
-var box=document.getElementById('box'),txt=document.getElementById('txt'),hint=document.getElementById('hint'),bon=document.getElementById('bon'),boff=document.getElementById('boff');
+var box,txt,hint,bon,boff;
 
 function render(s){
   var on=String(s).toLowerCase()!=='aus';
@@ -93,7 +113,24 @@ function setStatus(s){
     });
   },5000);
 }
-readStatus().then(function(s){render(s||'aus');}).catch(function(){render('aus');});
+function unlock(){
+  document.getElementById('lock').style.display='none';
+  document.getElementById('panel').style.display='block';
+  box=document.getElementById('box');txt=document.getElementById('txt');hint=document.getElementById('hint');
+  bon=document.getElementById('bon');boff=document.getElementById('boff');
+  readStatus().then(function(s){render(s||'aus');}).catch(function(){render('aus');});
+}
+function tryUnlock(){
+  if(document.getElementById('pw').value===PW){
+    try{localStorage.setItem('ferryUnlocked','1');}catch(e){}
+    unlock();
+  } else {
+    document.getElementById('lockerr').textContent='Falsches Passwort';
+  }
+}
+document.getElementById('unlockBtn').addEventListener('click',tryUnlock);
+document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') tryUnlock(); });
+try{ if(localStorage.getItem('ferryUnlocked')==='1') unlock(); }catch(e){}
 </script>
 </body>
 </html>
